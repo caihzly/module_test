@@ -1,0 +1,106 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define CMD_GET_GPIO_V			(0xA0)
+#define CMD_SET_GPIO_V			(0xA1)
+#define CMD_FREE_GPIO 			(0xA2)
+
+struct user_data
+{
+	int gpio_num;
+	int value;
+};
+
+int get_gpio_value(int fd, int gpio_num)
+{
+    struct user_data userdata;
+	
+    memset(&userdata, 0, sizeof(struct user_data));
+    userdata.gpio_num = gpio_num;
+
+    ioctl(fd, CMD_GET_GPIO_V, &userdata);
+	
+	return userdata.value;
+}
+
+int set_gpio_value(int fd, int gpio_num, int value) 
+{
+    int ret = -1;
+    struct user_data userdata;
+	
+    memset(&userdata, 0, sizeof(struct user_data));
+    userdata.gpio_num = gpio_num;
+    userdata.value = value;
+
+    ret = ioctl(fd, CMD_SET_GPIO_V, &userdata);
+
+    return ret;
+}
+
+int release_gpio(int fd, int gpio_num)
+{
+    int ret = -1;
+    struct user_data userdata;
+	
+    memset(&userdata, 0, sizeof(struct user_data));
+    userdata.gpio_num = gpio_num;
+	
+    ret = ioctl(fd, CMD_FREE_GPIO, &userdata);
+	
+    return ret;
+}
+
+int main(int argc, char *argv[])
+{	
+	int fd_gpio_dev = -1;
+	int gpio_num = 0;
+	int value = 0;
+	
+	fd_gpio_dev = open("/dev/gpio_para", O_RDWR);
+	if (fd_gpio_dev < 0)
+	{
+		printf("line : %d, open /dev/gpio_para fail\n", __LINE__);
+		return -1;
+	}
+	
+	if (argc == 2)
+	{
+		gpio_num = atoi(argv[1]);
+		value = get_gpio_value(fd_gpio_dev, gpio_num);
+		printf("[%d] -> [%d]\n", gpio_num, value);
+		
+	}
+	else if (argc == 3)
+	{
+		gpio_num = atoi(argv[1]);
+		value = atoi(argv[2]);
+		set_gpio_value(fd_gpio_dev, gpio_num, value);
+	}
+	else if (argc == 4)
+	{
+		gpio_num = atoi(argv[1]);
+		if (0 == atoi(argv[2]) && 0 == strncmp("free", argv[3], 4))
+		{
+			release_gpio(fd_gpio_dev, gpio_num);
+		}
+	}
+	else
+	{
+		printf("usage:\n");
+		printf("get gpio value: ./iotest.elf gpio_num\n");
+		printf("set gpio value: ./iotest.elf gpio_num value\n");
+		printf("free gpio:      ./iotest.elf gpio_num 0 free\n");
+	}
+	
+	close(fd_gpio_dev);
+	
+	return 0;
+}
