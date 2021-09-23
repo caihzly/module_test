@@ -1,0 +1,303 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ */
+/dts-v1/;
+#include "rv1126_02r.dtsi"
+#include "rv1126-evb-v13.dtsi"
+/ {
+	model = "Rockchip RV1126 EVB DDR3 V13 Board";
+	compatible = "rockchip,rv1126-evb-ddr3-v13", "rockchip,rv1126";
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0xff570000 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=ext4 rootwait snd_aloop.index=7 coherent_pool=2M hw_ver=v000000";
+	};
+
+	techpoint_sound: techpoint-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "dsp_b";  
+		simple-audio-card,name = "rockchip,techpoint-sound";
+		simple-audio-card,bitclock-master = <&sound_codec>;
+		simple-audio-card,frame-master = <&sound_codec>;
+		simple-audio-card,mclk-fs = <256>;
+		sound_cpu: simple-audio-card,cpu {
+			sound-dai = <&i2s0_8ch>;
+			dai-tdm-slot-num = <8>;
+			dai-tdm-slot-width = <16>;
+		};
+		sound_codec: simple-audio-card,codec {
+			sound-dai = <&tp9930>;
+		};
+	};
+};
+
+#if 1 //TP9930_TP2855_ISP
+
+&i2c1 {
+	status = "disabled";
+	/delete-node/ ar0230@10;
+	/delete-node/ ov4689@36;
+	/delete-node/ os04a10@36;
+};
+
+&i2c4 {
+	tp9930: tp9930@44 {   
+		compatible = "techpoint,tp9930";
+		reg = <0x44>;
+		#sound-dai-cells = <0>;
+		clocks = <&cru CLK_MIPICSI_OUT>;
+		clock-names = "xvclk";
+		//avdd-supply = <&vcc_avdd>;
+		//dovdd-supply = <&vcc_dovdd>;
+		//dvdd-supply = <&vcc_dvdd>;
+		power-domains = <&power RV1126_PD_VI>;
+		pinctrl-names = "rockchip,camera_default";
+		pinctrl-0 = <&mipicsi_clk0 &cifm0_bt1120_ctl>;
+		rockchip,grf = <&grf>;
+		reset-gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_LOW>; 
+		power-gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
+		rockchip,camera-module-index = <0>;
+		rockchip,camera-module-facing = "back";
+		rockchip,camera-module-name = "default";
+		rockchip,camera-module-lens-name = "default";
+		
+		/* audio */
+		techpoint,audio-in-format = "i2s";
+		techpoint,audio-in-mclk-fs = <256>;
+		techpoint,audio-in-cascade-order = <0>;  /* no cascade */
+		
+		port {
+			cam_para_out1: endpoint {
+				remote-endpoint = <&cif_para_in>;
+				bus-width = <16>;
+				pclk-sample = <1>;
+			};
+		};
+	};
+		
+	tp2855: tp2855@47 {
+		compatible = "techpoint,tp2855-unused";
+		reg = <0x47>;
+		#sound-dai-cells = <0>;
+		clocks = <&cru CLK_MIPICSI_OUT>;
+		clock-names = "xvclk";
+		//avdd-supply = <&vcc_avdd>;
+		//dovdd-supply = <&vcc_dovdd>;
+		//dvdd-supply = <&vcc_dvdd>;
+		power-domains = <&power RV1126_PD_VI>;
+		pinctrl-names = "rockchip,camera_default";
+		pinctrl-0 = <&mipicsi_clk0>;
+		reset-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
+		//power-gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
+		rockchip,camera-module-index = <0>;
+		rockchip,camera-module-facing = "front";
+		rockchip,camera-module-name = "tp2855";
+		rockchip,camera-module-lens-name = "tp2855";
+
+		/* audio */
+		techpoint,audio-in-format = "i2s";
+		techpoint,audio-in-mclk-fs = <256>;
+		techpoint,audio-in-cascade-order = <1>;  /* the 1st chip */
+		techpoint,audio-in-cascade-slaves = <&tp9930>;
+
+		port {
+			ucam_out0: endpoint {
+				remote-endpoint = <&mipi_in_ucam0>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+};
+
+&rkcif_dvp {
+	status = "okay";
+
+	// rockchip,cif-monitor = <3 2 25 1000 5>;
+
+	port {
+		/* Parallel bus endpoint */
+		cif_para_in: endpoint {
+			remote-endpoint = <&cam_para_out1>;
+			bus-width = <16>;
+		};
+	};
+};
+
+&rkcif_mmu {
+	status = "disabled";
+};
+
+&csi_dphy0 {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi_in_ucam0: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&ucam_out0>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			csidphy0_out: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&isp_in>;
+			};
+		};
+	};
+};
+
+&csi_dphy1 {
+	status = "disabled";
+	/delete-node/ ports;
+};
+
+&mipi_csi2 {
+	status = "disabled";
+	/delete-node/ ports;
+};
+
+&rkcif_mipi_lvds {
+	status = "disabled";
+	/delete-node/ port;
+};
+
+&rkcif_mipi_lvds_sditf {
+	status = "disabled";
+	/delete-node/ port;
+};
+
+&rkisp_vir0 {
+	status = "okay";
+	/delete-node/ ports;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			isp_in: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&csidphy0_out>;
+			};
+		};
+	};
+};
+
+&rkispp_vir0 {
+	status = "disabled";
+	/delete-node/ port;
+};
+
+&rkisp_vir1 {
+	status = "disabled";
+	/delete-node/ ports;
+};
+
+&rkispp_vir1 {
+	status = "disabled";
+	/delete-node/ port;
+};
+
+&pinctrl {
+	cif {
+		/omit-if-no-ref/
+		cifm0_bt1120_ctl: cifm0_bt1120_ctl {
+			rockchip,pins =
+				/* cif_clkin_m0 */
+				<3 RK_PC5 1 &pcfg_pull_none>,
+				/* cif_clkout_m0 */
+				<3 RK_PC6 1 &pcfg_pull_none>,
+				/* cif_d0_m0 */
+				<3 RK_PA4 1 &pcfg_pull_none>,
+				/* cif_d10_m0 */
+				<3 RK_PB6 1 &pcfg_pull_none>,
+				/* cif_d11_m0 */
+				<3 RK_PB7 1 &pcfg_pull_none>,
+				/* cif_d12_m0 */
+				<3 RK_PC0 1 &pcfg_pull_none>,
+				/* cif_d13_m0 */
+				<3 RK_PC1 1 &pcfg_pull_none>,
+				/* cif_d14_m0 */
+				<3 RK_PC2 1 &pcfg_pull_none>,
+				/* cif_d15_m0 */
+				<3 RK_PC3 1 &pcfg_pull_none>,
+				/* cif_d1_m0 */
+				<3 RK_PA5 1 &pcfg_pull_none>,
+				/* cif_d2_m0 */
+				<3 RK_PA6 1 &pcfg_pull_none>,
+				/* cif_d3_m0 */
+				<3 RK_PA7 1 &pcfg_pull_none>,
+				/* cif_d4_m0 */
+				<3 RK_PB0 1 &pcfg_pull_none>,
+				/* cif_d5_m0 */
+				<3 RK_PB1 1 &pcfg_pull_none>,
+				/* cif_d6_m0 */
+				<3 RK_PB2 1 &pcfg_pull_none>,
+				/* cif_d7_m0 */
+				<3 RK_PB3 1 &pcfg_pull_none>,
+				/* cif_d8_m0 */
+				<3 RK_PB4 1 &pcfg_pull_none>,
+				/* cif_d9_m0 */
+				<3 RK_PB5 1 &pcfg_pull_none>;
+		};
+	};
+};
+
+#endif
+
+&rkispp_vir0 {
+	status = "okay";
+};
+
+&rkispp_vir1 {
+	status = "okay";
+};
+
+&rkispp_vir2 {
+	status = "okay";
+};
+
+&rkispp_vir3 {
+	status = "okay";
+};
+
+&rkispp_vir4 {
+	status = "okay";
+};
+
+&rkispp_vir5 {
+	status = "okay";
+};
+
+&rkispp_vir6 {
+	status = "okay";
+};
+
+&rkispp_vir7 {
+	status = "okay";
+};
+  
+&rkispp {
+	status = "okay";
+	max-input = <1920 1080 25>;
+};
+
+//Add by caihz : 0420
+&rkispp_mmu {
+	status = "disabled";
+};
+//End Add

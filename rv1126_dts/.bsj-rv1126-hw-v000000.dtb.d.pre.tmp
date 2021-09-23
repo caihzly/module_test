@@ -1,0 +1,25 @@
+bsj-rv1126-hw-v000000.o: arch/arm/boot/dts/bsj-rv1126-hw-v000000.dts \
+ arch/arm/boot/dts/rv1126_02r.dtsi \
+ scripts/dtc/include-prefixes/dt-bindings/clock/rv1126-cru.h \
+ scripts/dtc/include-prefixes/dt-bindings/power/rv1126-power.h \
+ scripts/dtc/include-prefixes/dt-bindings/gpio/gpio.h \
+ scripts/dtc/include-prefixes/dt-bindings/interrupt-controller/irq.h \
+ scripts/dtc/include-prefixes/dt-bindings/interrupt-controller/arm-gic.h \
+ scripts/dtc/include-prefixes/dt-bindings/pinctrl/rockchip.h \
+ scripts/dtc/include-prefixes/dt-bindings/soc/rockchip,boot-mode.h \
+ scripts/dtc/include-prefixes/dt-bindings/soc/rockchip-system-status.h \
+ scripts/dtc/include-prefixes/dt-bindings/suspend/rockchip-rv1126.h \
+ scripts/dtc/include-prefixes/dt-bindings/thermal/thermal.h \
+ arch/arm/boot/dts/rv1126-dram-default-timing.dtsi \
+ scripts/dtc/include-prefixes/dt-bindings/clock/rockchip-ddr.h \
+ scripts/dtc/include-prefixes/dt-bindings/memory/rv1126-dram.h \
+ scripts/dtc/include-prefixes/dt-bindings/memory/rockchip-dram.h \
+ arch/arm/boot/dts/rv1126-pinctrl.dtsi \
+ arch/arm/boot/dts/rockchip-pinconf.dtsi \
+ arch/arm/boot/dts/rv1126-evb-v13.dtsi \
+ arch/arm/boot/dts/rv1126-evb-v12.dtsi \
+ arch/arm/boot/dts/rv1126-evb-v10.dtsi \
+ scripts/dtc/include-prefixes/dt-bindings/display/drm_mipi_dsi.h \
+ scripts/dtc/include-prefixes/dt-bindings/display/media-bus-format.h \
+ scripts/dtc/include-prefixes/dt-bindings/input/input.h \
+ scripts/dtc/include-prefixes/dt-bindings/input/linux-event-codes.h
